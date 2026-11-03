@@ -23,7 +23,7 @@ from . import __version__
 from .engine.advisor import Advisor
 from .engine.item import Item, Outcome, item_from_dict, item_to_dict
 from .engine.journal import Attempt, Journal
-from .engine.model import bucket
+from .engine.model import bucket, quality
 from .engine.runes import STATS, find_rune
 
 EXO_CHOICES = ["pa", "pm", "po", "invo"]
@@ -134,6 +134,13 @@ class MainWindow(QMainWindow):
         form.addRow("Nom", self.name_edit)
         form.addRow("Niveau", self.level_spin)
         form.addRow("Puits", self.puits_spin)
+        self.quality_spin = QSpinBox()
+        self.quality_spin.setRange(-1, 100)
+        self.quality_spin.setSuffix(" %")
+        self.quality_spin.setSpecialValueText("auto")
+        self.quality_spin.setValue(-1)
+        self.quality_spin.setToolTip("Qualité de l'objet vue par le jeu. « auto » : poids actuel / poids max.")
+        form.addRow("Qualité", self.quality_spin)
         v.addLayout(form)
         self.lines = LinesTable()
         v.addWidget(self.lines)
@@ -178,7 +185,7 @@ class MainWindow(QMainWindow):
         self.advice_table.verticalHeader().setVisible(False)
         self.advice_table.itemChanged.connect(self._price_edited)
         v.addWidget(self.advice_table)
-        note = QLabel("Les pourcentages sont des estimations : ils s'affinent avec ton journal de tentatives.")
+        note = QLabel("Chances calculées avec la formule de Huz, puis affinées avec ton journal de tentatives.")
         note.setWordWrap(True)
         note.setStyleSheet("color: gray")
         v.addWidget(note)
@@ -235,6 +242,8 @@ class MainWindow(QMainWindow):
         self.item.name = self.name_edit.text()
         self.item.level = self.level_spin.value()
         self.item.puits = self.puits_spin.value()
+        q = self.quality_spin.value()
+        self.item.quality = None if q < 0 else q / 100
         self.lines.fill(self.item)
 
     def advisor(self) -> Advisor:
@@ -246,7 +255,7 @@ class MainWindow(QMainWindow):
         sugg = adv.safest(self.item) if self.mode_safe.isChecked() else adv.suggestions(self.item)
         self.weight_label.setText(
             f"Poids de l'objet : {self.item.total_weight:g} / {self.item.max_weight:g}   ·   "
-            f"Puits : {self.item.puits:g}")
+            f"Puits : {self.item.puits:g}   ·   Qualité : {quality(self.item):.0%}")
         exo_code = self.exo_combo.currentData()
         exo = adv.exo(self.item, exo_code) if exo_code else None
         if exo and exo.ready:
@@ -351,6 +360,7 @@ class MainWindow(QMainWindow):
         self.name_edit.setText(item.name)
         self.level_spin.setValue(item.level)
         self.puits_spin.setValue(item.puits)
+        self.quality_spin.setValue(-1 if item.quality is None else round(item.quality * 100))
         self.lines.load(item)
         self.refresh()
 

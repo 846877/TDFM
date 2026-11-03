@@ -55,6 +55,7 @@ class Item:
     level: int
     lines: dict[str, Line] = field(default_factory=dict)
     puits: float = 0.0
+    quality: float | None = None  # qualité affichée par le jeu (0 à 1), si connue
 
     def add_line(self, code: str, min_: int, max_: int, current: int | None = None, **kw) -> Line:
         line = Line(get_stat(code), min_, max_, max_ if current is None else current, **kw)
@@ -85,6 +86,8 @@ class Item:
         """
         losses = losses or {}
         before = self.puits
+        start_line = self.lines.get(rune.stat.code)
+        start_value = start_line.current if start_line else 0
         if outcome in (Outcome.SC, Outcome.SN):
             self.line_for(rune.stat).current += rune.value
         lost_weight = 0.0
@@ -93,8 +96,9 @@ class Item:
             line.current -= pts
             lost_weight += pts * line.stat.weight
         if outcome is not Outcome.SC:
+            rune_weight = rune_weight_on(start_value, rune)
             # Reliquat = poids perdu - poids de la rune ; le puits ne descend pas sous 0.
-            self.puits = max(0.0, self.puits + lost_weight - rune.weight)
+            self.puits = max(0.0, self.puits + lost_weight - rune_weight)
         if puits_seen is not None:
             self.puits = float(puits_seen)
         # Une ligne exo retombée à 0 disparaît.
@@ -103,9 +107,16 @@ class Item:
         return self.puits - before
 
 
+def rune_weight_on(current: int, rune: Rune) -> float:
+    """Poids réel de la rune : divisé par deux sur une ligne en malus (sauf de -1 à 0)."""
+    if current < 0 and current + rune.value < 0:
+        return rune.weight / 2
+    return rune.weight
+
+
 def item_to_dict(item: Item) -> dict:
     return {
-        "name": item.name, "level": item.level, "puits": item.puits,
+        "name": item.name, "level": item.level, "puits": item.puits, "quality": item.quality,
         "lines": [
             {"stat": c, "min": l.min, "max": l.max, "current": l.current,
              "target": l.target, "priority": l.priority}
@@ -115,7 +126,8 @@ def item_to_dict(item: Item) -> dict:
 
 
 def item_from_dict(data: dict) -> Item:
-    it = Item(data["name"], data.get("level", 200), puits=data.get("puits", 0.0))
+    it = Item(data["name"], data.get("level", 200), puits=data.get("puits", 0.0),
+              quality=data.get("quality"))
     for l in data.get("lines", []):
         it.add_line(l["stat"], l["min"], l["max"], l["current"],
                     target=l.get("target"), priority=l.get("priority", 1.0))

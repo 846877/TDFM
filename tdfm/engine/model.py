@@ -1,11 +1,21 @@
-"""Probabilités estimées de SC / SN / EC.
+"""Probabilités de SC / SN / EC.
 
-ATTENTION : Ankama ne publie pas la formule. Ce modèle est une heuristique fondée sur les
-observations communautaires :
-  - les chances baissent quand la ligne approche ou dépasse son max ;
-  - elles baissent quand l'objet est déjà « chargé » en poids ;
-  - en exo, les runes lourdes (PA, PM, PO) ont 1 % de SC et pas de SN.
-Les statistiques réelles du joueur (journal) viennent corriger cette estimation.
+Formule de la difficulté D d'après la vidéo de Huz « J'ai PERCÉ le secret de la forgemagie
+DOFUS » (Dofus 3) :
+
+    D = 5
+      + 45 si 80 % du jet <= valeur <= max         (palier des 80 %)
+      + (65 + 4 x poids au-dessus du max) si over   (over)
+      + 12 x max(0, ligne / rune - 14)              (règle du x20)
+      - 20 x max(0, 1,1 - qualité) si niveau < 170  (niveau 170)
+      + 60 x qualité^12                             (qualité de l'objet)
+
+    SC = max(2, (100 - D) / 2) ; SN ~ 50 ; EC = 100 - SC - SN
+    Exo PA, PM, PO : 1 % de SC, pas de SN.
+
+« 80 % du jet » = min + 0,8 x (max - min). Les conditions sont évaluées sur la valeur
+actuelle de la ligne (avant la rune). La baisse du SN en over et au-delà de D = 100 est lue
+sur les graphiques de la vidéo (approximation). Le journal des tentatives corrige le tout.
 """
 
 from __future__ import annotations
@@ -46,29 +56,52 @@ def bucket(item: Item, rune: Rune) -> str:
     return "bas" if fill <= 0.5 else ("haut" if fill <= 0.85 else "max")
 
 
+def quality(item: Item) -> float:
+    """Qualité de l'objet vue par le jeu (0 à 1).
+
+    Par défaut : poids actuel / poids maximal, plafonné à 1. Peut être forcée via
+    `item.quality` si le jeu l'affiche autrement.
+    """
+    if item.quality is not None:
+        return item.quality
+    return _clamp(item.total_weight / item.max_weight) if item.max_weight else 1.0
+
+
+def difficulty(item: Item, rune: Rune) -> float:
+    line = item.lines[rune.stat.code]
+    cur = line.current
+    d = 5.0
+    threshold = line.min + 0.8 * (line.max - line.min)
+    if threshold <= cur <= line.max:
+        d += 45
+    if cur > line.max:
+        d += 65 + 4 * (cur - line.max) * line.stat.weight
+    if rune.value:
+        d += 12 * max(0.0, abs(cur) / rune.value - 14)
+    q = quality(item)
+    if item.level < 170:
+        d -= 20 * max(0.0, 1.1 - q)
+    d += 60 * q ** 12
+    return d
+
+
 def estimate(item: Item, rune: Rune) -> Odds:
     line = item.lines.get(rune.stat.code)
     if line is None or line.exo:
         if rune.stat.heavy or rune.weight > 20:
             return Odds(EXO_SC, 0.0, 1 - EXO_SC)
-        return Odds(0.05, 0.25, 0.70)
-
-    after = line.current + rune.value
-    load = item.total_weight / item.max_weight if item.max_weight else 1.0
-    load_penalty = 1 - 0.3 * _clamp((load - 0.8) / 0.4)
-
-    if after > line.max:
-        over_pts = after - line.max
-        frac = _clamp(over_pts / line.stat.over_cap)
-        sc = (0.08 - 0.06 * frac) * load_penalty
-        sn = 0.35 - 0.15 * frac
+        line = None
+    if line is None:
+        # Exo d'une rune légère : on la traite comme une ligne vide en over.
+        sc, sn = 0.02, 0.50
+        return Odds(sc, sn, 1 - sc - sn)
+    d = difficulty(item, rune)
+    sc = max(2.0, (100 - d) / 2) / 100
+    if line.current > line.max:
+        sn = 50 - 1.5 * (line.current - line.max) * line.stat.weight
     else:
-        fill = after / line.max if line.max > 0 else 1.0
-        sc = (0.05 + 0.65 * (1 - fill) ** 0.7) * load_penalty
-        ec = 0.10 + 0.30 * fill
-        sn = 1 - sc - ec
-    sc, sn = _clamp(sc), _clamp(sn)
-    sn = min(sn, 1 - sc)
+        sn = 50 - 0.375 * max(0.0, d - 100)
+    sn = _clamp(sn / 100, 0.0, 1 - sc)
     return Odds(sc, sn, 1 - sc - sn)
 
 

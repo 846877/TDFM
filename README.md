@@ -17,8 +17,8 @@ de la fenêtre de forgemagie (ou ta saisie) et te conseille :
 
 ## Probabilités
 
-Ankama ne publie pas la formule de réussite. TDFM part d'une estimation (voir
-`tdfm/engine/model.py`) puis la corrige avec ton journal de tentatives.
+TDFM utilise la formule de difficulté présentée par Huz dans « J'ai PERCÉ le secret de la forgemagie DOFUS » (voir
+`tdfm/engine/model.py`), puis la corrige avec ton journal de tentatives.
 
 ## Développement
 

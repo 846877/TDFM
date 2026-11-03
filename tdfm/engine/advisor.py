@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .item import Item
+from .item import Item, rune_weight_on
 from .model import Odds, Observed, blend, bucket, estimate
 from .runes import Rune, get_stat
 
@@ -45,7 +45,7 @@ class Advisor:
         odds = self.odds(item, rune)
         useful = min(rune.value, line.missing)
         gain = odds.passes * useful * rune.stat.weight * line.priority
-        uncovered = max(0.0, rune.weight - item.puits)
+        uncovered = max(0.0, rune_weight_on(line.current, rune) - item.puits)
         loss = (odds.sn + odds.ec) * uncovered
         price = self.prices.get(rune.name)
         net = gain - self.loss_aversion * loss
