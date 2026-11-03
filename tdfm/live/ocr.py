@@ -70,7 +70,11 @@ class WindowsOcr:
         return await self.engine.recognize_async(bmp)
 
     def read(self, image: Image.Image, scale: float = 1.0) -> list[Word]:  # pragma: no cover
-        max_dim = self.engine.max_image_dimension
+        try:
+            from winrt.windows.media.ocr import OcrEngine
+            max_dim = OcrEngine.max_image_dimension
+        except Exception:
+            max_dim = 4096
         if max(image.size) * scale > max_dim:
             scale = max_dim / max(image.size)
         if scale != 1.0:
