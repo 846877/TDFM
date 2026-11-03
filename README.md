@@ -12,7 +12,7 @@ de la fenêtre de forgemagie (ou ta saisie) et te conseille :
 - [x] Moteur de calcul : poids des runes, puits, over, probabilités estimées, conseils, timing de l'exo
 - [x] Journal des tentatives pour affiner les probabilités avec tes vrais résultats
 - [x] Interface Windows (saisie de l'objet, conseils, exo, résultat SC/SN/EC)
-- [ ] Lecture de capture d'écran (OCR)
+- [x] Mode direct : lecture de l'écran (OCR Windows intégré), conseils mis à jour en temps réel
 - [x] `.exe` construit automatiquement par GitHub Actions (onglet Actions → TDFM-windows)
 
 ## Probabilités

@@ -46,6 +46,8 @@ class Line:
 
     @property
     def missing(self) -> int:
+        if self.max <= 0 and self.target is None:
+            return 0  # ligne en malus ou exo : rien à monter par défaut
         return max(0, self.goal - self.current)
 
 

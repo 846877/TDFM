@@ -365,9 +365,49 @@ class MainWindow(QMainWindow):
         self.refresh()
 
 
+STYLE = """
+QWidget { background: #14171c; color: #e6e6e6; font-size: 10pt; }
+QFrame#card { background: #1d2229; border: 1px solid #2c333d; border-radius: 10px; }
+QFrame#card QLabel { background: transparent; }
+QLabel#caption { color: #8b95a3; font-size: 9pt; font-weight: bold; letter-spacing: 1px; }
+QLabel#big { font-size: 26pt; font-weight: bold; color: #f3c74f; }
+QPushButton { background: #2a3340; border: 1px solid #3a4655; border-radius: 6px; padding: 6px 14px; }
+QPushButton:hover { background: #33404f; }
+QPushButton:disabled { color: #666; }
+QTableWidget, QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox {
+    background: #1b2027; border: 1px solid #2c333d; border-radius: 4px; gridline-color: #2c333d; }
+QHeaderView::section { background: #222831; color: #a9b3c0; border: none; padding: 4px; }
+QTabWidget::pane { border: none; }
+QTabBar::tab { background: #1b2027; padding: 8px 18px; border-top-left-radius: 6px; border-top-right-radius: 6px; }
+QTabBar::tab:selected { background: #2a3340; color: #f3c74f; }
+QGroupBox { border: 1px solid #2c333d; border-radius: 8px; margin-top: 14px; padding-top: 8px; }
+QGroupBox::title { subcontrol-origin: margin; left: 10px; color: #8b95a3; }
+"""
+
+
+class AppWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        from PySide6.QtWidgets import QTabWidget
+        from .ui_live import LivePanel
+        self.setWindowTitle(f"TDFM {__version__} : assistant de forgemagie")
+        self.resize(820, 860)
+        self.manual = MainWindow()
+        self.live = LivePanel(self.manual.advisor, self)
+        tabs = QTabWidget()
+        tabs.addTab(self.live, "Direct (lecture de l'écran)")
+        tabs.addTab(self.manual, "Manuel")
+        self.setCentralWidget(tabs)
+
+    def closeEvent(self, event):
+        self.live.stop()
+        super().closeEvent(event)
+
+
 def main():
     app = QApplication(sys.argv)
-    win = MainWindow()
+    app.setStyleSheet(STYLE)
+    win = AppWindow()
     win.show()
     sys.exit(app.exec())
 
