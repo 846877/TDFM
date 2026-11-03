@@ -11,9 +11,9 @@ de la fenêtre de forgemagie (ou ta saisie) et te conseille :
 
 - [x] Moteur de calcul : poids des runes, puits, over, probabilités estimées, conseils, timing de l'exo
 - [x] Journal des tentatives pour affiner les probabilités avec tes vrais résultats
-- [ ] Interface Windows
+- [x] Interface Windows (saisie de l'objet, conseils, exo, résultat SC/SN/EC)
 - [ ] Lecture de capture d'écran (OCR)
-- [ ] `.exe` construit automatiquement
+- [x] `.exe` construit automatiquement par GitHub Actions (onglet Actions → TDFM-windows)
 
 ## Probabilités
 
@@ -25,4 +25,5 @@ Ankama ne publie pas la formule de réussite. TDFM part d'une estimation (voir
 ```
 pip install -e .[dev]
 pytest
+python run_tdfm.py
 ```

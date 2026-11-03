@@ -101,3 +101,22 @@ class Item:
         for code in [c for c, l in self.lines.items() if l.exo and l.current <= 0]:
             del self.lines[code]
         return self.puits - before
+
+
+def item_to_dict(item: Item) -> dict:
+    return {
+        "name": item.name, "level": item.level, "puits": item.puits,
+        "lines": [
+            {"stat": c, "min": l.min, "max": l.max, "current": l.current,
+             "target": l.target, "priority": l.priority}
+            for c, l in item.lines.items()
+        ],
+    }
+
+
+def item_from_dict(data: dict) -> Item:
+    it = Item(data["name"], data.get("level", 200), puits=data.get("puits", 0.0))
+    for l in data.get("lines", []):
+        it.add_line(l["stat"], l["min"], l["max"], l["current"],
+                    target=l.get("target"), priority=l.get("priority", 1.0))
+    return it

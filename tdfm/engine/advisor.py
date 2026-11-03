@@ -32,7 +32,7 @@ class ExoAdvice:
 class Advisor:
     def __init__(self, prices: dict[str, float] | None = None,
                  stats: dict[tuple[str, str], Observed] | None = None,
-                 loss_aversion: float = 1.5):
+                 loss_aversion: float = 1.0):
         self.prices = prices or {}
         self.stats = stats or {}
         self.loss_aversion = loss_aversion

@@ -101,3 +101,12 @@ def test_journal_stats(tmp_path):
         j.add(Attempt("x", "Fo", "bas", o, 0, 0))
     s = j.stats()[("Fo", "bas")]
     assert (s.sc, s.sn, s.ec) == (2, 0, 1)
+
+
+def test_item_roundtrip():
+    from tdfm.engine.item import item_from_dict, item_to_dict
+    it = make_item()
+    it.puits = 12
+    it.lines["fo"].target = 75
+    back = item_from_dict(item_to_dict(it))
+    assert item_to_dict(back) == item_to_dict(it)
